@@ -73,7 +73,7 @@ function App() {
         setMessage(`You already guessed ${pokemon.name}. Try another Pokémon.`)
         setGuess('')
         return
-      }      
+      }
 
       if (pokemon.id === targetPokemon.id) {
         setIsCorrect(true)
@@ -111,7 +111,7 @@ function App() {
 
   return (
     <main className="min-h-screen bg-slate-950 px-6 py-12 text-white">
-      <div className="mx-auto max-w-xl">
+      <section className="mx-auto max-w-xl">
         <h1 className="text-4xl font-bold">ChakaDex</h1>
 
         <p className="mt-2 text-slate-400">
@@ -120,7 +120,7 @@ function App() {
 
         <p className="mt-4 text-sm text-slate-400">
           Attempts: {guessHistory.length}
-        </p>        
+        </p>
 
         <div className="mt-8 rounded-2xl bg-slate-900 p-6">
           <PokemonSilhouette pokemon={targetPokemon} revealed={isCorrect} />
@@ -144,9 +144,11 @@ function App() {
             </button>
           )}
         </div>
+      </section>
 
+      <section className="mx-auto mt-8 max-w-6xl">
         <GuessHistory guessHistory={guessHistory} />
-      </div>
+      </section>
     </main>
   )
 }
