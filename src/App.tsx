@@ -54,6 +54,16 @@ function App() {
         return
       }
 
+      const alreadyGuessed = guessHistory.some(
+        (guessResult) => guessResult.pokemon.id === pokemon.id,
+      )
+
+      if (alreadyGuessed) {
+        setMessage(`You already guessed ${pokemon.name}. Try another Pokémon.`)
+        setGuess('')
+        return
+      }      
+
       if (pokemon.id === targetPokemon.id) {
         setIsCorrect(true)
         setMessage(`Correct! The Pokémon was ${targetPokemon.name}.`)
@@ -96,6 +106,10 @@ function App() {
         <p className="mt-2 text-slate-400">
           Guess the hidden Pokémon from the original 151.
         </p>
+
+        <p className="mt-4 text-sm text-slate-400">
+          Attempts: {guessHistory.length}
+        </p>        
 
         <div className="mt-8 rounded-2xl bg-slate-900 p-6">
           <PokemonSilhouette pokemon={targetPokemon} revealed={isCorrect} />
