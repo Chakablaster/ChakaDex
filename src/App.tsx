@@ -18,21 +18,32 @@ function App() {
   const [loading, setLoading] = useState(true)
   const [isCorrect, setIsCorrect] = useState(false)
 
-  useEffect(() => {
+  async function startNewGame() {
+    setLoading(true)
+    setTargetPokemon(null)
+    setGuessHistory([])
+    setGuess('')
+    setMessage('')
+    setIsCorrect(false)
+
     const randomId = Math.floor(Math.random() * 151) + 1
 
-    getPokemon(randomId)
-      .then(setTargetPokemon)
-      .catch((error: unknown) => {
-        setMessage(
-          error instanceof Error
-            ? error.message
-            : 'Failed to load a Pokémon',
-        )
-      })
-      .finally(() => {
-        setLoading(false)
-      })
+    try {
+      const pokemon = await getPokemon(randomId)
+      setTargetPokemon(pokemon)
+    } catch (error: unknown) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : 'Failed to load a Pokémon',
+      )
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    startNewGame()
   }, [])
 
   async function handleSubmit(
@@ -122,6 +133,16 @@ function App() {
           />
 
           {message && <p className="mt-4">{message}</p>}
+
+          {isCorrect && (
+            <button
+              type="button"
+              onClick={startNewGame}
+              className="mt-4 rounded-lg bg-emerald-600 px-5 py-3 font-semibold"
+            >
+              New Game
+            </button>
+          )}
         </div>
 
         <GuessHistory guessHistory={guessHistory} />
