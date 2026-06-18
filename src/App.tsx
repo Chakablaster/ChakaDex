@@ -1,52 +1,22 @@
 import { useEffect, useState } from 'react'
 import type React from 'react'
+import GuessForm from './components/GuessForm'
+import GuessHistory from './components/GuessHistory'
+import PokemonSilhouette from './components/PokemonSilhouette'
 import { getPokemon } from './services/pokeApi'
 import type { Pokemon } from './types/pokemon'
-
-type ComparisonResult = {
-  id: 'higher' | 'lower' | 'match'
-  height: 'higher' | 'lower' | 'match'
-  weight: 'higher' | 'lower' | 'match'
-  types: 'match' | 'partial' | 'none'
-}
-
-function compareNumber(
-  guessedValue: number,
-  targetValue: number,
-): 'higher' | 'lower' | 'match' {
-  if (guessedValue === targetValue) {
-    return 'match'
-  }
-
-  return targetValue > guessedValue ? 'higher' : 'lower'
-}
-
-function compareTypes(
-  guessedTypes: string[],
-  targetTypes: string[],
-): 'match' | 'partial' | 'none' {
-  const exactMatch =
-    guessedTypes.length === targetTypes.length &&
-    guessedTypes.every((type) => targetTypes.includes(type))
-
-  if (exactMatch) {
-    return 'match'
-  }
-
-  const partialMatch = guessedTypes.some((type) =>
-    targetTypes.includes(type),
-  )
-
-  return partialMatch ? 'partial' : 'none'
-}
+import {
+  comparePokemon,
+  type GuessResult,
+} from './utils/comparePokemon'
 
 function App() {
   const [targetPokemon, setTargetPokemon] = useState<Pokemon | null>(null)
-  const [guessedPokemon, setGuessedPokemon] = useState<Pokemon | null>(null)
-  const [comparison, setComparison] = useState<ComparisonResult | null>(null)
+  const [guessHistory, setGuessHistory] = useState<GuessResult[]>([])
   const [guess, setGuess] = useState('')
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(true)
+  const [isCorrect, setIsCorrect] = useState(false)
 
   useEffect(() => {
     const randomId = Math.floor(Math.random() * 151) + 1
@@ -66,11 +36,11 @@ function App() {
   }, [])
 
   async function handleSubmit(
-  event: React.SubmitEvent<HTMLFormElement>,
-) {
+    event: React.SubmitEvent<HTMLFormElement>,
+  ) {
     event.preventDefault()
 
-    if (!targetPokemon || !guess.trim()) {
+    if (!targetPokemon || !guess.trim() || isCorrect) {
       return
     }
 
@@ -84,20 +54,22 @@ function App() {
         return
       }
 
-      setGuessedPokemon(pokemon)
-
       if (pokemon.id === targetPokemon.id) {
-        setComparison(null)
+        setIsCorrect(true)
         setMessage(`Correct! The Pokémon was ${targetPokemon.name}.`)
+        setGuess('')
         return
       }
 
-      setComparison({
-        id: compareNumber(pokemon.id, targetPokemon.id),
-        height: compareNumber(pokemon.height, targetPokemon.height),
-        weight: compareNumber(pokemon.weight, targetPokemon.weight),
-        types: compareTypes(pokemon.types, targetPokemon.types),
-      })
+      const comparisonResult = comparePokemon(pokemon, targetPokemon)
+
+      setGuessHistory((previousGuesses) => [
+        {
+          pokemon,
+          comparison: comparisonResult,
+        },
+        ...previousGuesses,
+      ])
 
       setMessage('Not quite. Use the hints and try again.')
       setGuess('')
@@ -126,60 +98,19 @@ function App() {
         </p>
 
         <div className="mt-8 rounded-2xl bg-slate-900 p-6">
-          <img
-            src={targetPokemon.image}
-            alt="Hidden Pokémon silhouette"
-            className="mx-auto h-64 w-64 brightness-0"
+          <PokemonSilhouette pokemon={targetPokemon} revealed={isCorrect} />
+
+          <GuessForm
+            guess={guess}
+            onGuessChange={setGuess}
+            onSubmit={handleSubmit}
+            disabled={isCorrect}
           />
-
-          <form onSubmit={handleSubmit} className="mt-6 flex gap-3">
-            <input
-              type="text"
-              value={guess}
-              onChange={(event) => setGuess(event.target.value)}
-              placeholder="Enter a Pokémon name"
-              className="flex-1 rounded-lg bg-slate-800 px-4 py-3 outline-none"
-            />
-
-            <button
-              type="submit"
-              className="rounded-lg bg-blue-600 px-5 py-3 font-semibold"
-            >
-              Guess
-            </button>
-          </form>
 
           {message && <p className="mt-4">{message}</p>}
         </div>
 
-        {guessedPokemon && comparison && (
-          <div className="mt-6 rounded-2xl bg-slate-900 p-6">
-            <div className="flex items-center gap-4">
-              <img
-                src={guessedPokemon.image}
-                alt={guessedPokemon.name}
-                className="h-24 w-24"
-              />
-
-              <div>
-                <h2 className="text-xl font-semibold capitalize">
-                  {guessedPokemon.name}
-                </h2>
-
-                <p className="text-slate-400">
-                  Pokédex #{guessedPokemon.id}
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-5 space-y-2">
-              <p>Pokédex number: {comparison.id}</p>
-              <p>Height: {comparison.height}</p>
-              <p>Weight: {comparison.weight}</p>
-              <p>Type: {comparison.types}</p>
-            </div>
-          </div>
-        )}
+        <GuessHistory guessHistory={guessHistory} />
       </div>
     </main>
   )
